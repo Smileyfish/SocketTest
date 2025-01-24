@@ -7,6 +7,7 @@ import { availableParallelism } from "node:os";
 import cluster from "node:cluster";
 import { createAdapter, setupPrimary } from "@socket.io/cluster-adapter";
 import { setupDatabase } from "./database/db.js";
+import userRoutes from "./routes/userRoutes.js";
 
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
@@ -30,6 +31,10 @@ if (cluster.isPrimary) {
   });
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
+
+  app.use(express.json());
+
+  app.use("/api/users", userRoutes);
 
   app.get("/", (req, res) => {
     res.sendFile(join(__dirname, "index.html"));

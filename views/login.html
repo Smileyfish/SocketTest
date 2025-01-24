@@ -65,5 +65,40 @@
       <a href="/register">Don't have an account? Register here</a>
       <div class="message" id="message"></div>
     </div>
+    <script>
+      const form = document.getElementById("login-form");
+      const message = document.getElementById("message");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch("/api/users/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+
+          if (response.ok) {
+            const { token } = await response.json();
+            localStorage.setItem("token", token);
+            message.style.color = "green";
+            message.textContent = "Login successful!";
+            setTimeout(() => {
+              window.location.href = "/"; // Redirect to a dashboard or home page
+            }, 1000);
+          } else {
+            const error = await response.text();
+            message.style.color = "red";
+            message.textContent = error;
+          }
+        } catch (err) {
+          message.style.color = "red";
+          message.textContent = "An error occurred. Please try again.";
+        }
+      });
+    </script>
   </body>
 </html>
