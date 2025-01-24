@@ -8,6 +8,7 @@ import { open } from "sqlite";
 import { availableParallelism } from "node:os";
 import cluster from "node:cluster";
 import { createAdapter, setupPrimary } from "@socket.io/cluster-adapter";
+import { setupDatabase } from "./Database/db.js";
 
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
@@ -21,20 +22,7 @@ if (cluster.isPrimary) {
   // set up the adapter on the primary thread
   setupPrimary();
 } else {
-  // open the database file
-  const db = await open({
-    filename: "chat.db",
-    driver: sqlite3.Database,
-  });
-
-  // create our 'messages' table (you can ignore the 'client_offset' column for now)
-  await db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_offset TEXT UNIQUE,
-      content TEXT
-  );
-`);
+  const db = await setupDatabase();
 
   const app = express();
   const server = createServer(app);
