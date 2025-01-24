@@ -3,12 +3,10 @@ import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Server } from "socket.io";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
 import { availableParallelism } from "node:os";
 import cluster from "node:cluster";
 import { createAdapter, setupPrimary } from "@socket.io/cluster-adapter";
-import { setupDatabase } from "./Database/db.js";
+import { setupDatabase } from "./database/db.js";
 
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
@@ -39,12 +37,12 @@ if (cluster.isPrimary) {
 
   // Route to serve the registration page
   app.get("/register", (req, res) => {
-    res.sendFile(join(__dirname, "register.html"));
+    res.sendFile(join(__dirname, "views/register.html"));
   });
 
   // Route to serve the login page
   app.get("/login", (req, res) => {
-    res.sendFile(join(__dirname, "login.html"));
+    res.sendFile(join(__dirname, "views/login.html"));
   });
 
   io.on("connection", async (socket) => {

@@ -3,7 +3,7 @@ import { open } from "sqlite";
 
 export async function setupDatabase() {
   const db = await open({
-    filename: "Database/chat.db",
+    filename: "database/chat.db",
     driver: sqlite3.Database,
   });
 
