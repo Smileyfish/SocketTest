@@ -9,21 +9,6 @@ import { availableParallelism } from "node:os";
 import cluster from "node:cluster";
 import { createAdapter, setupPrimary } from "@socket.io/cluster-adapter";
 
-// open the database file
-const db = await open({
-  filename: "chat.db",
-  driver: sqlite3.Database,
-});
-
-// create our 'messages' table (you can ignore the 'client_offset' column for now)
-await db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_offset TEXT UNIQUE,
-      content TEXT
-  );
-`);
-
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
   // create one worker per available core
@@ -36,6 +21,21 @@ if (cluster.isPrimary) {
   // set up the adapter on the primary thread
   setupPrimary();
 } else {
+  // open the database file
+  const db = await open({
+    filename: "chat.db",
+    driver: sqlite3.Database,
+  });
+
+  // create our 'messages' table (you can ignore the 'client_offset' column for now)
+  await db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_offset TEXT UNIQUE,
+      content TEXT
+  );
+`);
+
   const app = express();
   const server = createServer(app);
   const io = new Server(server, {
@@ -47,6 +47,16 @@ if (cluster.isPrimary) {
 
   app.get("/", (req, res) => {
     res.sendFile(join(__dirname, "index.html"));
+  });
+
+  // Route to serve the registration page
+  app.get("/register", (req, res) => {
+    res.sendFile(join(__dirname, "register.html"));
+  });
+
+  // Route to serve the login page
+  app.get("/login", (req, res) => {
+    res.sendFile(join(__dirname, "login.html"));
   });
 
   io.on("connection", async (socket) => {
