@@ -1,5 +1,5 @@
 node_modules
 *.log
-# chat.db
+chat.db
 package-lock.json
 .env
