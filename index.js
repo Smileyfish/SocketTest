@@ -8,6 +8,11 @@ import cluster from "node:cluster";
 import { createAdapter, setupPrimary } from "@socket.io/cluster-adapter";
 import { setupDatabase } from "./database/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import { authenticateJWT } from "./middlewares/authMiddleware.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
@@ -48,6 +53,24 @@ if (cluster.isPrimary) {
   // Route to serve the login page
   app.get("/login", (req, res) => {
     res.sendFile(join(__dirname, "views/login.html"));
+  });
+
+  app.get("/protected", authenticateJWT, (req, res) => {
+    res.send("<h1>This is a protected route</h1>");
+  });
+
+  //Protect the chat routes
+  app.use(authenticateJWT);
+
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error("Authentication error"));
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) return next(new Error("Authentication error"));
+      socket.user = user;
+      next();
+    });
   });
 
   io.on("connection", async (socket) => {

@@ -1,10 +1,12 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { setupDatabase } from "../Database/db.js";
+import { setupDatabase } from "../database/db.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = express.Router();
-const SECRET_KEY = "your_secret_key"; // Move this to an environment variable
 
 // Initialize the database
 let db;
@@ -54,14 +56,14 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, username: user.username },
-      SECRET_KEY,
+      { username: user.username },
+      process.env.JWT_SECRET,
       {
         expiresIn: "1h",
       }
     );
 
-    res.json({ token });
+    res.header("Authorization", `Bearer ${token}`).send({ token });
   } catch (err) {
     res.status(500).send("Error logging in");
   }
