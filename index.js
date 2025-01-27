@@ -25,6 +25,11 @@ if (cluster.isPrimary) {
 
   // set up the adapter on the primary thread
   setupPrimary();
+
+  cluster.on("exit", (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died`);
+    cluster.fork(); // Restart the worker
+  });
 } else {
   const db = await setupDatabase();
 
@@ -117,7 +122,7 @@ if (cluster.isPrimary) {
     });
   });
 
-  const port = process.env.PORT;
+  const port = process.env.PORT || 3000;
 
   server.listen(port, () => {
     const host = process.env.RENDER_EXTERNAL_URL || "localhost";
