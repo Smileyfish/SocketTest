@@ -120,6 +120,7 @@ if (cluster.isPrimary) {
   const port = process.env.PORT;
 
   server.listen(port, () => {
-    console.log(`server running at http://localhost:${port}`);
+    const host = process.env.RENDER_EXTERNAL_URL || "localhost";
+    console.log(`server running at http://${host}:${port}`);
   });
 }
