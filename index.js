@@ -3,26 +3,16 @@ import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Server } from "socket.io";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
 import { availableParallelism } from "node:os";
 import cluster from "node:cluster";
 import { createAdapter, setupPrimary } from "@socket.io/cluster-adapter";
+import { setupDatabase } from "./database/db.js";
+import userRoutes from "./routes/userRoutes.js";
+import { authenticateJWT } from "./middlewares/authMiddleware.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-// open the database file
-const db = await open({
-  filename: "chat.db",
-  driver: sqlite3.Database,
-});
-
-// create our 'messages' table (you can ignore the 'client_offset' column for now)
-await db.exec(`
-  CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_offset TEXT UNIQUE,
-      content TEXT
-  );
-`);
+dotenv.config();
 
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
@@ -36,6 +26,8 @@ if (cluster.isPrimary) {
   // set up the adapter on the primary thread
   setupPrimary();
 } else {
+  const db = await setupDatabase();
+
   const app = express();
   const server = createServer(app);
   const io = new Server(server, {
@@ -45,8 +37,40 @@ if (cluster.isPrimary) {
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
 
+  app.use(express.json());
+
+  app.use("/api/users", userRoutes);
+
   app.get("/", (req, res) => {
     res.sendFile(join(__dirname, "index.html"));
+  });
+
+  // Route to serve the registration page
+  app.get("/register", (req, res) => {
+    res.sendFile(join(__dirname, "views/register.html"));
+  });
+
+  // Route to serve the login page
+  app.get("/login", (req, res) => {
+    res.sendFile(join(__dirname, "views/login.html"));
+  });
+
+  app.get("/protected", authenticateJWT, (req, res) => {
+    res.send("<h1>This is a protected route</h1>");
+  });
+
+  //Protect the chat routes
+  app.use(authenticateJWT);
+
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error("Authentication error"));
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) return next(new Error("Authentication error"));
+      socket.user = user;
+      next();
+    });
   });
 
   io.on("connection", async (socket) => {
@@ -96,6 +120,8 @@ if (cluster.isPrimary) {
   const port = process.env.PORT;
 
   server.listen(port, () => {
-    console.log(`server running at http://localhost:${port}`);
+    const host = process.env.RENDER_EXTERNAL_URL || "localhost";
+    const protocol = process.env.RENDER_EXTERNAL_URL ? "https" : "http";
+    console.log(`server running at ${protocol}://${host}:${port}`);
   });
 }

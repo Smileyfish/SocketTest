@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f4f4f9;
+      }
+      .login-container {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 300px;
+        text-align: center;
+      }
+      .login-container h2 {
+        margin-bottom: 20px;
+      }
+      .login-container form {
+        display: flex;
+        flex-direction: column;
+      }
+      .login-container input {
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .login-container button {
+        padding: 10px;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .login-container button:hover {
+        background: #0056b3;
+      }
+      .message {
+        margin-top: 10px;
+        font-size: 14px;
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <h2>Login</h2>
+      <form id="login-form">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <a href="/register">Don't have an account? Register here</a>
+      <div class="message" id="message"></div>
+    </div>
+    <script>
+      const form = document.getElementById("login-form");
+      const message = document.getElementById("message");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch("/api/users/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+
+          if (response.ok) {
+            const { token } = await response.json();
+            localStorage.setItem("token", token);
+            message.style.color = "green";
+            message.textContent = "Login successful!";
+            setTimeout(() => {
+              window.location.href = "/"; // Redirect to a dashboard or home page
+            }, 1000);
+          } else {
+            const error = await response.text();
+            message.style.color = "red";
+            message.textContent = error;
+          }
+        } catch (err) {
+          message.style.color = "red";
+          message.textContent = "An error occurred. Please try again.";
+        }
+      });
+    </script>
+  </body>
+</html>
