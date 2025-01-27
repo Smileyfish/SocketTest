@@ -14,16 +14,14 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const port = process.env.PORT || 3000; // Use the PORT environment variable or default to 3000
+
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
-  // create one worker per available core
   for (let i = 0; i < numCPUs; i++) {
-    cluster.fork({
-      PORT: 3000 + i,
-    });
+    cluster.fork();
   }
 
-  // set up the adapter on the primary thread
   setupPrimary();
 
   cluster.on("exit", (worker, code, signal) => {
@@ -123,12 +121,9 @@ if (cluster.isPrimary) {
   });
 
   const port = process.env.PORT || 3000;
-
   server.listen(port, () => {
     const host = process.env.RENDER_EXTERNAL_URL || "localhost";
-    const url = process.env.RENDER_EXTERNAL_URL
-      ? `${host}:${port}`
-      : `http://${host}:${port}`;
-    console.log(`server running at ${url}`);
+    const protocol = process.env.RENDER_EXTERNAL_URL ? "https" : "http";
+    console.log(`server running at ${protocol}://${host}:${port}`);
   });
 }
