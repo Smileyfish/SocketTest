@@ -180,6 +180,15 @@
         window.location.href = "/login";
       });
 
+      document
+        .getElementById("start-private-chat")
+        .addEventListener("click", () => {
+          const selectedUserId = document.getElementById("user-list").value;
+          if (!selectedUserId) return alert("Please select a user");
+ 
+          socket.emit("join private chat", { to: selectedUserId });
+        });
+
       async function fetchUsers() {
         const response = await fetch("/api/users/all", {
           headers: { Authorization: `Bearer ${token}` },

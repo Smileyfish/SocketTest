@@ -101,6 +101,35 @@ if (cluster.isPrimary) {
       callback();
     });
 
+    socket.on("private message", async ({ to, message }, callback) => {
+      try {
+        const chatRoomId = await getOrCreateChatRoom(
+          db,
+          socket.user.username,
+          to
+        );
+
+        // Store the message in the database
+        const result = await db.run(
+          "INSERT INTO chat_messages (chat_room_id, sender_id, content) VALUES (?, ?, ?)",
+          [chatRoomId, socket.user.id, message]
+        );
+
+        callback({ success: true, messageId: result.lastID });
+      } catch (error) {
+        callback({ success: false, error: error.message });
+      }
+    });
+
+    socket.on("join private chat", async ({ to }) => {
+      const chatRoomId = await getOrCreateChatRoom(
+        db,
+        socket.user.username,
+        to
+      );
+      socket.join(`chat_${chatRoomId}`);
+    });
+
     if (!socket.recovered) {
       // if the connection state recovery was not successful
       try {
@@ -130,4 +159,24 @@ if (cluster.isPrimary) {
       : `http://${host}:${port}`;
     console.log(`server running at ${url}`);
   });
+}
+
+async function getOrCreateChatRoom(db, user1, user2) {
+  // Ensure user1_id is always smaller than user2_id to avoid duplicate entries
+  const [userA, userB] = user1 < user2 ? [user1, user2] : [user2, user1];
+
+  let room = await db.get(
+    "SELECT * FROM chat_rooms WHERE user1_id = ? AND user2_id = ?",
+    [userA, userB]
+  );
+
+  if (!room) {
+    const result = await db.run(
+      "INSERT INTO chat_rooms (user1_id, user2_id) VALUES (?, ?)",
+      [userA, userB]
+    );
+    room = { id: result.lastID };
+  }
+
+  return room.id;
 }
