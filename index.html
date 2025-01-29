@@ -77,6 +77,10 @@
       <button id="toggle-btn">Disconnect</button>
     </form>
     <button id="logout-btn">Logout</button>
+    <select id="user-list">
+      <option value="">Select a user</option>
+    </select>
+    <button id="start-private-chat">Start Private Chat</button>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let counter = 0;
@@ -104,6 +108,11 @@
         },
         ackTimeout: 10000,
         retries: 3,
+      });
+
+      socket.on("user info", (user) => {
+        socket.user = user;
+        fetchUsers();
       });
 
       const form = document.getElementById("form");
@@ -145,6 +154,26 @@
         localStorage.removeItem("token");
         window.location.href = "/login";
       });
+
+      async function fetchUsers() {
+        const response = await fetch("/api/users/all", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const users = await response.json();
+        console.log(users);
+
+        const userSelect = document.getElementById("user-list");
+        users.forEach((user) => {
+          if (user.username !== socket.user.username) {
+            // Don't list self
+            console.log(socket.user.username);
+            const option = document.createElement("option");
+            option.value = user.username;
+            option.textContent = user.username;
+            userSelect.appendChild(option);
+          }
+        });
+      }
     </script>
   </body>
 </html>
