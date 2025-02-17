@@ -263,17 +263,6 @@
         socket.auth.serverOffset = serverOffset;
       });
 
-      toggleButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (socket.connected) {
-          toggleButton.innerText = "Connect";
-          socket.disconnect();
-        } else {
-          toggleButton.innerText = "Disconnect";
-          socket.connect();
-        }
-      });
-
       logoutButton.addEventListener("click", (e) => {
         e.preventDefault();
         localStorage.removeItem("token");
@@ -286,7 +275,6 @@
         if (!selectedUserId) return alert("Please select a user");
 
         socket.emit("join private chat", { to: selectedUserId });
-
         // Open the private chat side tab
         document.body.classList.add("open");
         privateChatHeaderText.textContent =
@@ -296,22 +284,17 @@
       privateChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
         if (privateChatInput.value) {
-          const clientOffset = `${socket.id} - ${counter++}`;
-          socket.emit(
-            "private chat message",
-            privateChatInput.value,
-            clientOffset
-          );
+          const message = privateChatInput.value;
+          socket.emit("private chat message", privateChatInput.value);
           privateChatInput.value = "";
         }
       });
 
-      socket.on("private chat message", (msg, serverOffset) => {
+      socket.on("private chat message", (msg) => {
         const item = document.createElement("li");
         item.textContent = msg;
         privateChatMessages.appendChild(item);
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
-        socket.auth.serverOffset = serverOffset;
       });
 
       async function fetchUsers() {
@@ -336,6 +319,17 @@
 
       privateChatClose.addEventListener("click", () => {
         document.body.classList.remove("open");
+      });
+
+      toggleButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (socket.connected) {
+          toggleButton.innerText = "Connect";
+          socket.disconnect();
+        } else {
+          toggleButton.innerText = "Disconnect";
+          socket.connect();
+        }
       });
     </script>
   </body>
