@@ -103,22 +103,28 @@ io.on("connection", async (socket) => {
     callback();
   });
 
-  socket.on("private chat message", async (message, callback) => {
-    io.emit("private chat message", message);
-
-    /*try {
-        const chatRoomId = await getOrCreateChatRoom(
-          db,
-          socket.user.username,
-          to
-        );
-
-        // Store the message in the database
-        const result = await db.run(
-          "INSERT INTO chat_messages (chat_room_id, sender_id, content) VALUES (?, ?, ?)",
-          [chatRoomId, socket.user.id, message]
-        );
-      } catch (error) {}*/
+  socket.on("private chat message", async (message, chatRoomId, callback) => {
+    try {
+      // Store the message in the database
+      const result = await db.run(
+        "INSERT INTO chat_messages (chat_room_id, sender_id, content) VALUES (?, ?, ?)",
+        [chatRoomId, socket.user.username, message]
+      );
+    } catch (e) {
+      if (e.errno === 19) {
+        callback();
+      } else {
+      }
+    }
+    io.to(`chat_${chatRoomId}`).emit("private chat message", message);
+    console.log(
+      "private message: " +
+        message +
+        " to chat room " +
+        chatRoomId +
+        " from " +
+        socket.user.username
+    );
     callback();
   });
 
@@ -126,6 +132,7 @@ io.on("connection", async (socket) => {
     const chatRoomId = await getOrCreateChatRoom(db, socket.user.username, to);
     socket.join(`chat_${chatRoomId}`);
     console.log(`user ${socket.user.username} joined chat_${chatRoomId}`);
+    socket.emit("join private chat", chatRoomId);
     callback();
   });
 

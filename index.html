@@ -195,6 +195,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let counter = 0;
+      let currentRoomId = null;
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -274,6 +275,9 @@
         const selectedUserId = userList.value;
         if (!selectedUserId) return alert("Please select a user");
 
+        // Clear previous private chat messages
+        privateChatMessages.innerHTML = "";
+
         socket.emit("join private chat", { to: selectedUserId });
         // Open the private chat side tab
         document.body.classList.add("open");
@@ -281,11 +285,20 @@
           userList.options[userList.selectedIndex].text;
       });
 
+      socket.on("join private chat", (response) => {
+        currentRoomId = response;
+        console.log("Joined private chat ", response);
+      });
+
       privateChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
         if (privateChatInput.value) {
           const message = privateChatInput.value;
-          socket.emit("private chat message", privateChatInput.value);
+          socket.emit(
+            "private chat message",
+            privateChatInput.value,
+            currentRoomId
+          );
           privateChatInput.value = "";
         }
       });
