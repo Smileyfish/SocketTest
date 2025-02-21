@@ -195,7 +195,10 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let counter = 0;
+      let privateChatCounter = 0;
       let currentRoomId = null;
+      let selectedUserId = null; // Store the selected user ID
+      let privateChatMessagesBackup = []; // Store private chat messages
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -217,6 +220,7 @@
         auth: {
           token: token,
           serverOffset: 0,
+          serverOffsetPrivateChat: 0,
         },
         ackTimeout: 10000,
         retries: 3,
@@ -272,11 +276,12 @@
 
       startPrivateChatButton.addEventListener("click", (e) => {
         e.preventDefault();
-        const selectedUserId = userList.value;
+        selectedUserId = userList.value;
         if (!selectedUserId) return alert("Please select a user");
 
         // Clear previous private chat messages
         privateChatMessages.innerHTML = "";
+        privateChatMessagesBackup = []; // Clear backup messages
 
         socket.emit("join private chat", { to: selectedUserId });
         // Open the private chat side tab
@@ -293,21 +298,25 @@
       privateChatForm.addEventListener("submit", (e) => {
         e.preventDefault();
         if (privateChatInput.value) {
+          const clientOffset = `${socket.id} - ${privateChatCounter++}`;
           const message = privateChatInput.value;
           socket.emit(
             "private chat message",
             privateChatInput.value,
-            currentRoomId
+            currentRoomId,
+            clientOffset
           );
+          privateChatMessagesBackup.push(message); // Backup the message
           privateChatInput.value = "";
         }
       });
 
-      socket.on("private chat message", (msg) => {
+      socket.on("private chat message", (msg, serverOffsetPrivateChat) => {
         const item = document.createElement("li");
         item.textContent = msg;
         privateChatMessages.appendChild(item);
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
+        socket.auth.serverOffsetPrivateChat = serverOffsetPrivateChat;
       });
 
       async function fetchUsers() {
@@ -318,6 +327,7 @@
         console.log(users);
 
         const userSelect = document.getElementById("user-list");
+        userSelect.innerHTML = '<option value="">Select a user</option>'; // Clear existing options
         users.forEach((user) => {
           if (user.username !== socket.user.username) {
             // Don't list self
@@ -328,6 +338,11 @@
             userSelect.appendChild(option);
           }
         });
+
+        // Restore selected user
+        if (selectedUserId) {
+          userSelect.value = selectedUserId;
+        }
       }
 
       privateChatClose.addEventListener("click", () => {
@@ -342,6 +357,20 @@
         } else {
           toggleButton.innerText = "Disconnect";
           socket.connect();
+          // Reinitialize private chat state
+          console.log(selectedUserId)
+          if (selectedUserId) {
+            socket.emit("join private chat", { to: selectedUserId });
+            privateChatMessages.innerHTML = "";
+            privateChatMessagesBackup.forEach((msg) => {
+              const item = document.createElement("li");
+              item.textContent = msg;
+              privateChatMessages.appendChild(item);
+            });
+            document.body.classList.add("open");
+            privateChatHeaderText.textContent =
+              userList.options[userList.selectedIndex].text;
+          }
         }
       });
     </script>
