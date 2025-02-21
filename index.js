@@ -139,6 +139,21 @@ io.on("connection", async (socket) => {
     callback();
   });
 
+  socket.on("fetch private chat messages", async (chatRoomId, callback) => {
+    try {
+      const messages = await db.all(
+        "SELECT * FROM chat_messages WHERE chat_room_id = ?",
+        chatRoomId
+      );
+      socket.emit("fetch private chat messages", messages);
+      console.log(messages);
+      console.log(chatRoomId);
+      callback();
+    } catch (e) {
+      callback();
+    }
+  });
+
   if (!socket.recovered) {
     // if the connection state recovery was not successful
     try {

@@ -292,6 +292,7 @@
 
       socket.on("join private chat", (response) => {
         currentRoomId = response;
+        socket.emit("fetch private chat messages", currentRoomId);
         console.log("Joined private chat ", response);
       });
 
@@ -309,6 +310,16 @@
           privateChatMessagesBackup.push(message); // Backup the message
           privateChatInput.value = "";
         }
+      });
+
+      socket.on("fetch private chat messages", (messages) => {
+        privateChatMessages.innerHTML = "";
+        messages.forEach((msg) => {
+          const item = document.createElement("li");
+          item.textContent = msg.content;
+          privateChatMessages.appendChild(item);
+        });
+        privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
       });
 
       socket.on("private chat message", (msg, serverOffsetPrivateChat) => {
@@ -358,7 +369,7 @@
           toggleButton.innerText = "Disconnect";
           socket.connect();
           // Reinitialize private chat state
-          console.log(selectedUserId)
+          console.log(selectedUserId);
           if (selectedUserId) {
             socket.emit("join private chat", { to: selectedUserId });
             privateChatMessages.innerHTML = "";
