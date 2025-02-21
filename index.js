@@ -78,8 +78,6 @@ io.use((socket, next) => {
 io.on("connection", async (socket) => {
   console.log("a user connected", socket.user.username);
 
-
-
   // Emit the user information to the client
   socket.emit("user info", socket.user);
 
@@ -154,29 +152,12 @@ io.on("connection", async (socket) => {
     } catch (e) {
       console.error("Error recovering global chat messages:", e);
     }
-
-    try {
-      await db.each(
-        "SELECT chat_room_id, content FROM chat_messages WHERE chat_room_id IN (SELECT chat_room_id FROM chat_rooms WHERE user1_id = ? OR user2_id = ?) AND id > ?",
-        [
-          socket.user.username,
-          socket.user.username,
-          socket.handshake.auth.serverOffsetPrivateChat || 0,
-        ],
-        (_err, row) => {
-          socket.emit("private chat message", row.content, row.id);
-        }
-      );
-    } catch (e) {
-      console.error("Error recovering private chat messages:", e);
-    }
   }
 
   socket.on("disconnect", () => {
     console.log("user disconnected", socket.user.username);
   });
 });
-
 
 const port = process.env.PORT;
 
