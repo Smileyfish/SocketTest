@@ -97,9 +97,9 @@ io.on("connection", async (socket) => {
       }
       return;
     }
-    // include the offset with the message
-    io.emit("chat message", msg, result.lastID);
-    console.log("message: " + msg);
+    // include the username with the message
+    io.emit("chat message", socket.user.username, msg, result.lastID);
+    console.log("message from", socket.user.username + ":", msg);
     callback();
   });
 
@@ -118,15 +118,9 @@ io.on("connection", async (socket) => {
         } else {
         }
       }
-      io.to(`chat_${chatRoomId}`).emit("private chat message", message);
-      console.log(
-        "private message: " +
-          message +
-          " to chat room " +
-          chatRoomId +
-          " from " +
-          socket.user.username
-      );
+      // include the username with the private message
+      io.to(`chat_${chatRoomId}`).emit("private chat message", socket.user.username, message);
+      console.log("private message from", socket.user.username + ":", message);
       callback();
     }
   );

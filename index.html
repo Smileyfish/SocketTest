@@ -260,9 +260,9 @@
         }
       });
 
-      socket.on("chat message", (msg, serverOffset) => {
+      socket.on("chat message", (username, msg, serverOffset) => {
         const item = document.createElement("li");
-        item.textContent = msg;
+        item.textContent = `${username}: ${msg}`;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
         socket.auth.serverOffset = serverOffset;
@@ -322,9 +322,9 @@
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
       });
 
-      socket.on("private chat message", (msg, serverOffsetPrivateChat) => {
+      socket.on("private chat message", (username, msg, serverOffsetPrivateChat) => {
         const item = document.createElement("li");
-        item.textContent = msg;
+        item.textContent = `${username}: ${msg}`;
         privateChatMessages.appendChild(item);
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
         socket.auth.serverOffsetPrivateChat = serverOffsetPrivateChat;
