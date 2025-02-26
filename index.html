@@ -68,6 +68,106 @@
       #logout-btn:hover {
         background: #ff1a1a;
       }
+      #user-list {
+        position: fixed;
+        top: 60px;
+        right: 10px;
+        margin: 1rem 0;
+        padding: 0.5rem;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+      }
+      #start-private-chat {
+        position: fixed;
+        top: 120px;
+        right: 10px;
+        background: #28a745;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 3px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      #start-private-chat:hover {
+        background: #218838;
+      }
+      #private-chat {
+        position: fixed;
+        top: 0;
+        right: -300px;
+        width: 300px;
+        height: 100%;
+        background: #f1f1f1;
+        border-left: 1px solid #ccc;
+        transition: right 0.3s;
+        display: flex;
+        flex-direction: column;
+        z-index: 1000; /* Ensure the private chat tab is on top */
+      }
+      #private-chat-header {
+        background: #007bff;
+        color: #fff;
+        padding: 1rem;
+        text-align: center;
+        position: relative;
+      }
+      #private-chat-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #ff1a1a;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        color: #fff;
+        cursor: pointer;
+        z-index: 1001; /* Ensure the close button is on top */
+      }
+      #private-chat-close:hover {
+        background: #cc0000;
+      }
+      #private-chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 1rem;
+      }
+      #private-chat-form {
+        display: flex;
+        padding: 0.5rem;
+        border-top: 1px solid #ccc;
+      }
+      #private-chat-input {
+        flex-grow: 1;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+      #private-chat-send {
+        background: #007bff;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 3px;
+        color: #fff;
+        cursor: pointer;
+        margin-left: 0.5rem;
+      }
+      #private-chat-send:hover {
+        background: #0056b3;
+      }
+      .open #private-chat {
+        right: 0;
+      }
+      .open #messages {
+        margin-right: 300px;
+      }
+      .open #form,
+      .open #logout-btn,
+      .open #user-list,
+      .open #start-private-chat {
+        right: 310px;
+      }
     </style>
   </head>
   <body>
@@ -77,9 +177,28 @@
       <button id="toggle-btn">Disconnect</button>
     </form>
     <button id="logout-btn">Logout</button>
+    <select id="user-list">
+      <option value="">Select a user</option>
+    </select>
+    <button id="start-private-chat">Start Private Chat</button>
+    <div id="private-chat">
+      <div id="private-chat-header">
+        <span id="private-chat-header-text"></span>
+        <button id="private-chat-close">X</button>
+      </div>
+      <div id="private-chat-messages"></div>
+      <form id="private-chat-form">
+        <input id="private-chat-input" autocomplete="off" />
+        <button id="private-chat-send">Send</button>
+      </form>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let counter = 0;
+      let privateChatCounter = 0;
+      let currentRoomId = null;
+      let selectedUserId = null; // Store the selected user ID
+      let privateChatMessagesBackup = []; // Store private chat messages
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -101,9 +220,15 @@
         auth: {
           token: token,
           serverOffset: 0,
+          serverOffsetPrivateChat: 0,
         },
         ackTimeout: 10000,
         retries: 3,
+      });
+
+      socket.on("user info", (user) => {
+        socket.user = user;
+        fetchUsers();
       });
 
       const form = document.getElementById("form");
@@ -111,6 +236,20 @@
       const messages = document.getElementById("messages");
       const toggleButton = document.getElementById("toggle-btn");
       const logoutButton = document.getElementById("logout-btn");
+      const userList = document.getElementById("user-list");
+      const startPrivateChatButton =
+        document.getElementById("start-private-chat");
+      const privateChat = document.getElementById("private-chat");
+      const privateChatHeader = document.getElementById("private-chat-header");
+      const privateChatMessages = document.getElementById(
+        "private-chat-messages"
+      );
+      const privateChatForm = document.getElementById("private-chat-form");
+      const privateChatInput = document.getElementById("private-chat-input");
+      const privateChatClose = document.getElementById("private-chat-close");
+      const privateChatHeaderText = document.getElementById(
+        "private-chat-header-text"
+      );
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -129,6 +268,98 @@
         socket.auth.serverOffset = serverOffset;
       });
 
+      logoutButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      });
+
+      startPrivateChatButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        selectedUserId = userList.value;
+        if (!selectedUserId) return alert("Please select a user");
+
+        // Clear previous private chat messages
+        privateChatMessages.innerHTML = "";
+        privateChatMessagesBackup = []; // Clear backup messages
+
+        socket.emit("join private chat", { to: selectedUserId });
+        // Open the private chat side tab
+        document.body.classList.add("open");
+        privateChatHeaderText.textContent =
+          userList.options[userList.selectedIndex].text;
+      });
+
+      socket.on("join private chat", (response) => {
+        currentRoomId = response;
+        socket.emit("fetch private chat messages", currentRoomId);
+        console.log("Joined private chat ", response);
+      });
+
+      privateChatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (privateChatInput.value) {
+          const clientOffset = `${socket.id} - ${privateChatCounter++}`;
+          const message = privateChatInput.value;
+          socket.emit(
+            "private chat message",
+            privateChatInput.value,
+            currentRoomId,
+            clientOffset
+          );
+          privateChatMessagesBackup.push(message); // Backup the message
+          privateChatInput.value = "";
+        }
+      });
+
+      socket.on("fetch private chat messages", (messages) => {
+        privateChatMessages.innerHTML = "";
+        messages.forEach((msg) => {
+          const item = document.createElement("li");
+          item.textContent = msg.content;
+          privateChatMessages.appendChild(item);
+        });
+        privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
+      });
+
+      socket.on("private chat message", (msg, serverOffsetPrivateChat) => {
+        const item = document.createElement("li");
+        item.textContent = msg;
+        privateChatMessages.appendChild(item);
+        privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
+        socket.auth.serverOffsetPrivateChat = serverOffsetPrivateChat;
+      });
+
+      async function fetchUsers() {
+        const response = await fetch("/api/users/all", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const users = await response.json();
+        console.log(users);
+
+        const userSelect = document.getElementById("user-list");
+        userSelect.innerHTML = '<option value="">Select a user</option>'; // Clear existing options
+        users.forEach((user) => {
+          if (user.username !== socket.user.username) {
+            // Don't list self
+            console.log(socket.user.username);
+            const option = document.createElement("option");
+            option.value = user.username;
+            option.textContent = user.username;
+            userSelect.appendChild(option);
+          }
+        });
+
+        // Restore selected user
+        if (selectedUserId) {
+          userSelect.value = selectedUserId;
+        }
+      }
+
+      privateChatClose.addEventListener("click", () => {
+        document.body.classList.remove("open");
+      });
+
       toggleButton.addEventListener("click", (e) => {
         e.preventDefault();
         if (socket.connected) {
@@ -137,13 +368,21 @@
         } else {
           toggleButton.innerText = "Disconnect";
           socket.connect();
+          // Reinitialize private chat state
+          console.log(selectedUserId);
+          if (selectedUserId) {
+            socket.emit("join private chat", { to: selectedUserId });
+            privateChatMessages.innerHTML = "";
+            privateChatMessagesBackup.forEach((msg) => {
+              const item = document.createElement("li");
+              item.textContent = msg;
+              privateChatMessages.appendChild(item);
+            });
+            document.body.classList.add("open");
+            privateChatHeaderText.textContent =
+              userList.options[userList.selectedIndex].text;
+          }
         }
-      });
-
-      logoutButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        localStorage.removeItem("token");
-        window.location.href = "/login";
       });
     </script>
   </body>

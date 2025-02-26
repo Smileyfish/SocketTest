@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { authenticateJWT } from "../middlewares/authMiddleware.js";
 import { setupDatabase } from "../database/db.js";
 import dotenv from "dotenv";
 
@@ -66,6 +67,16 @@ router.post("/login", async (req, res) => {
     res.header("Authorization", `Bearer ${token}`).send({ token });
   } catch (err) {
     res.status(500).send("Error logging in");
+  }
+});
+
+// Get All Users Route
+router.get("/all", authenticateJWT, async (req, res) => {
+  try {
+    const users = await db.all("SELECT id, username FROM users");
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).send("Error retrieving users");
   }
 });
 
