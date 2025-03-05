@@ -12,6 +12,7 @@ export async function setupDatabase() {
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_offset TEXT UNIQUE,
+      sender_id TEXT,
       content TEXT
     );
   `);
@@ -27,8 +28,8 @@ export async function setupDatabase() {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS chat_rooms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user1_id INTEGER,
-      user2_id INTEGER,
+      user1_id TEXT,
+      user2_id TEXT,
       FOREIGN KEY(user1_id) REFERENCES users(id),
       FOREIGN KEY(user2_id) REFERENCES users(id)
     );
@@ -37,7 +38,7 @@ export async function setupDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       client_offset TEXT UNIQUE,
       chat_room_id INTEGER,
-      sender_id INTEGER,
+      sender_id TEXT,
       content TEXT,
       FOREIGN KEY(chat_room_id) REFERENCES chat_rooms(id),
       FOREIGN KEY(sender_id) REFERENCES users(id)

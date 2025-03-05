@@ -42,7 +42,9 @@
         outline: none;
         color: #fff;
       }
-
+      li {
+        list-style: none;
+      }
       #messages {
         list-style-type: none;
         margin: 0;
@@ -260,9 +262,16 @@
         }
       });
 
-      socket.on("chat message", (msg, serverOffset) => {
+      socket.on("chat message", (msg, serverOffset, user) => {
         const item = document.createElement("li");
-        item.textContent = msg;
+        if (user === socket.user.username) {
+          item.style.backgroundColor = "#d1e7dd"; // Light green for user
+          item.textContent = "You: ";
+        } else {
+          item.style.backgroundColor = "#7196bd"; // Light red for other user
+          item.textContent = user + ": ";
+        }
+        item.textContent = item.textContent + msg;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
         socket.auth.serverOffset = serverOffset;
@@ -316,18 +325,31 @@
         privateChatMessages.innerHTML = "";
         messages.forEach((msg) => {
           const item = document.createElement("li");
-          item.textContent = msg.content;
+          if (msg.sender_id === socket.user.username) {
+            item.style.backgroundColor = "#d1e7dd"; // Light green for user
+            item.textContent = "You: ";
+          } else {
+            item.style.backgroundColor = "#f8d7da"; // Light red for other user
+            item.textContent = msg.sender_id + ": ";
+          }
+          item.textContent = item.textContent + msg.content;
           privateChatMessages.appendChild(item);
         });
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
       });
 
-      socket.on("private chat message", (msg, serverOffsetPrivateChat) => {
+      socket.on("private chat message", (msg, user) => {
         const item = document.createElement("li");
-        item.textContent = msg;
+        if (user === socket.user.username) {
+          item.style.backgroundColor = "#d1e7dd"; // Light green for user
+          item.textContent = "You: ";
+        } else {
+          item.style.backgroundColor = "#f8d7da"; // Light red for other user
+          item.textContent = user + ": ";
+        }
+        item.textContent = item.textContent + msg;
         privateChatMessages.appendChild(item);
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
-        socket.auth.serverOffsetPrivateChat = serverOffsetPrivateChat;
       });
 
       async function fetchUsers() {
