@@ -13,19 +13,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
-/*
-if (cluster.isPrimary) {
-  const numCPUs = availableParallelism();
-  // create one worker per available core
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork({
-      PORT: 3000 + i,
-    });
-  }
 
-  // set up the adapter on the primary thread
-  setupPrimary();
-} else { */
 const db = await setupDatabase();
 
 const app = express();
@@ -34,7 +22,6 @@ const io = new Server(server, {
   connectionStateRecovery: {},
   pingInterval: 5000, // Ping every 5 seconds (default is 25s)
   pingTimeout: 10000, // Ping Timeout 10 seconds (default is 60)
-  // adapter: createAdapter(),
 });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -76,7 +63,7 @@ io.use((socket, next) => {
 });
 
 io.on("connection", async (socket) => {
-  console.log("a user connected", socket.user.username);
+  console.log(`a user connected: ${socket.user.username}`);
 
   // Emit the user information to the client
   socket.emit("user info", socket.user);
@@ -86,9 +73,10 @@ io.on("connection", async (socket) => {
     try {
       // store the message in the database
       result = await db.run(
-        "INSERT INTO messages (content, client_offset) VALUES (?,?)",
+        "INSERT INTO messages (content, client_offset, sender_id) VALUES (?,?,?)",
         msg,
-        clientOffset
+        clientOffset,
+        socket.user.username
       );
     } catch (e) {
       if (e.errno === 19) {
@@ -98,8 +86,8 @@ io.on("connection", async (socket) => {
       return;
     }
     // include the offset with the message
-    io.emit("chat message", msg, result.lastID);
-    console.log("message: " + msg);
+    io.emit("chat message", msg, result.lastID, socket.user.username);
+    console.log(`message from ${socket.user.username}: ${msg}`);
     callback();
   });
 
@@ -118,14 +106,13 @@ io.on("connection", async (socket) => {
         } else {
         }
       }
-      io.to(`chat_${chatRoomId}`).emit("private chat message", message);
+      io.to(`chat_${chatRoomId}`).emit(
+        "private chat message",
+        message,
+        socket.user.username
+      );
       console.log(
-        "private message: " +
-          message +
-          " to chat room " +
-          chatRoomId +
-          " from " +
-          socket.user.username
+        `private message from ${socket.user.username}: ${message} to chat room ${chatRoomId}`
       );
       callback();
     }
@@ -146,8 +133,6 @@ io.on("connection", async (socket) => {
         chatRoomId
       );
       socket.emit("fetch private chat messages", messages);
-      console.log(messages);
-      console.log(chatRoomId);
       callback();
     } catch (e) {
       callback();
@@ -170,7 +155,7 @@ io.on("connection", async (socket) => {
   }
 
   socket.on("disconnect", () => {
-    console.log("user disconnected", socket.user.username);
+    console.log(`user disconnected: ${socket.user.username}`);
   });
 });
 
@@ -179,17 +164,6 @@ const port = process.env.PORT;
 server.listen(port, () =>
   console.log(`Server running on http://localhost:${port}`)
 );
-
-/*
-  server.listen(port, () => {
-    const host = process.env.RENDER_EXTERNAL_URL || "localhost";
-    const url = process.env.RENDER_EXTERNAL_URL
-      ? `${host}:${port}`
-      : `http://${host}:${port}`;
-    console.log(`server running at ${url}`);
-  });
-
-}*/
 
 async function getOrCreateChatRoom(db, user1, user2) {
   // Ensure user1_id is always smaller than user2_id to avoid duplicate entries
