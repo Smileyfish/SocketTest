@@ -143,10 +143,11 @@ io.on("connection", async (socket) => {
     // if the connection state recovery was not successful
     try {
       await db.each(
-        "SELECT id, content FROM messages WHERE id > ?",
+        "SELECT id, content, sender_id FROM messages WHERE id > ?",
         [socket.handshake.auth.serverOffset || 0],
         (_err, row) => {
-          socket.emit("chat message", row.content, row.id);
+          socket.emit("chat message", row.content, row.id, row.sender_id);
+          console.log("Recovered message:", row.sender_id, row.content);
         }
       );
     } catch (e) {
