@@ -111,6 +111,13 @@ io.on("connection", async (socket) => {
         message,
         socket.user.username
       );
+
+      // Notify other users in the chat (excluding sender)
+      socket.to(`chat_${chatRoomId}`).emit("new private message", {
+        sender: socket.user.username,
+        message: "You have a new private message!",
+      });
+
       console.log(
         `private message from ${socket.user.username}: ${message} to chat room ${chatRoomId}`
       );

@@ -462,6 +462,24 @@
         privateChatMessages.scrollTop = privateChatMessages.scrollHeight;
       });
 
+      socket.on("new private message", (data) => {
+        const notification = document.createElement("div");
+        notification.innerText = `New message from ${data.sender}`;
+        notification.style.position = "fixed";
+        notification.style.top = "10px";
+        notification.style.right = "10px";
+        notification.style.background = "#ffcc00";
+        notification.style.padding = "10px";
+        notification.style.borderRadius = "5px";
+        notification.style.color = "#000";
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      });
+
       async function fetchUsers() {
         const response = await fetch("/api/users/all", {
           headers: { Authorization: `Bearer ${token}` },
