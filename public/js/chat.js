@@ -45,6 +45,4 @@ if (!token) {
     localStorage.removeItem("token");
     window.location.href = "/login.html";
   }
-  // Attach the logout function to the logout button
-  document.getElementById("logout-btn").addEventListener("click", logout);
 }
