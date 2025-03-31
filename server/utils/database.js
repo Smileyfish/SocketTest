@@ -3,7 +3,7 @@ import { open } from "sqlite";
 
 export async function setupDatabase() {
   const db = await open({
-    filename: "server/chat.db",
+    filename: "server/database/chat.db",
     driver: sqlite3.Database,
   });
 
@@ -17,6 +17,16 @@ export async function setupDatabase() {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
     );
   `);
+
+  // Create users table
+  await db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+  );
+`);
 
   return db;
 }

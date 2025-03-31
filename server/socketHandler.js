@@ -1,6 +1,6 @@
 export function handleSocket(io, db) {
   io.on("connection", async (socket) => {
-    console.log("A user connected:", socket.id);
+    console.log("A user connected:", socket.user.username);
 
     // Send previous allchat messages to new users
     try {
@@ -21,7 +21,7 @@ export function handleSocket(io, db) {
         await db.run(
           "INSERT INTO messages (content, sender_id, message_type) VALUES (?, ?, 'allchat')",
           msg,
-          socket.id
+          socket.user.id
         );
         io.emit("allchat message", msg);
       } catch (e) {
@@ -30,7 +30,7 @@ export function handleSocket(io, db) {
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+      console.log("User disconnected:", socket.user.username);
     });
   });
 }
