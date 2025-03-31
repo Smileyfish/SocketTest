@@ -19,7 +19,7 @@ if (!token) {
     messages.innerHTML = ""; // Clear existing messages
     msgs.forEach((msg) => {
       const item = document.createElement("li");
-      item.textContent = msg;
+      item.textContent = `${msg.username}: ${msg.content}`;
       messages.appendChild(item);
     });
   });
@@ -34,9 +34,9 @@ if (!token) {
   });
 
   // Display new messages
-  socket.on("allchat message", (msg) => {
+  socket.on("allchat message", (data) => {
     const item = document.createElement("li");
-    item.textContent = msg;
+    item.textContent = `${data.username}: ${data.content}`;
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
   });

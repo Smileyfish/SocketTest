@@ -5,12 +5,13 @@ export function handleSocket(io, db) {
     // Send previous allchat messages to new users
     try {
       const messages = await db.all(
-        "SELECT content FROM messages WHERE message_type = 'allchat' ORDER BY timestamp ASC"
+        `SELECT messages.content, users.username 
+         FROM messages 
+         JOIN users ON messages.sender_id = users.id
+         WHERE messages.message_type = 'allchat' 
+         ORDER BY messages.timestamp ASC`
       );
-      socket.emit(
-        "previous messages",
-        messages.map((msg) => msg.content)
-      );
+      socket.emit("previous messages", messages);
     } catch (e) {
       console.error("Error fetching messages from DB:", e);
     }
@@ -23,7 +24,14 @@ export function handleSocket(io, db) {
           msg,
           socket.user.id
         );
-        io.emit("allchat message", msg);
+
+        // Fetch username dynamically
+        const { username } = await db.get(
+          "SELECT username FROM users WHERE id = ?",
+          socket.user.id
+        );
+
+        io.emit("allchat message", { username, content: msg });
       } catch (e) {
         console.error("Database error:", e);
       }
