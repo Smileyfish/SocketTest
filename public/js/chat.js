@@ -45,4 +45,12 @@ if (!token) {
     localStorage.removeItem("token");
     window.location.href = "/login.html";
   }
+
+  // JavaScript to toggle the sidebar
+  const sidebar = document.getElementById("sidebar");
+  const sidebarToggle = document.getElementById("sidebar-toggle");
+
+  sidebarToggle.addEventListener("click", () => {
+    sidebar.classList.toggle("open"); // Toggle the sidebar visibility
+  });
 }

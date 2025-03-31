@@ -8,6 +8,14 @@
   <body>
     <h1>Socket.IO Chat</h1>
     <button onclick="logout()" id="logout-btn">Logout</button>
+
+     <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+      <button id="sidebar-toggle">☰</button>
+      <button id="new-chat-btn">New Chat</button>
+      <ul id="chat-list"></ul>
+    </div>
+
     <ul id="messages"></ul>
     <form id="form" action="">
       <input id="input" autocomplete="off" placeholder="Type a message..." />

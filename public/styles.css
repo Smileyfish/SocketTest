@@ -116,7 +116,7 @@ button:hover {
 
 #logout-btn {
   position: fixed;
-  top: 20px;
+  top: 10px;
   right: 20px;
   background-color: #dc3545; /* Red for logout */
   border: none;
@@ -187,4 +187,70 @@ a:hover {
   margin-top: 10px;
   font-size: 14px;
   color: red;
+}
+
+/** sidebar */
+/* Sidebar styles */
+#sidebar {
+  position: fixed;
+  top: 60px;
+  right: -280px; /* Sidebar stays slightly visible when closed */
+  width: 350px;
+  height: calc(100vh - 120px);
+  background: #1e1e1e;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -2px 0px 10px rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  overflow-y: auto;
+  transition: right 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  z-index: 2; /* Sidebar z-index */
+}
+
+#sidebar.open {
+  right: 0; /* Slide in fully when open */
+}
+
+/* Sidebar toggle button inside the sidebar */
+#sidebar-toggle {
+  position: absolute;
+  top: 10px; /* Align the button to the top left of the sidebar */
+  left: 10px; /* Space from the left */
+  background-color: transparent;
+  color: #0056b3;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+  z-index: 10; /* Button on top of the sidebar */
+}
+
+#sidebar-toggle:hover {
+  background-color: #0056b3;
+  color: #fff;
+}
+
+/* New chat button */
+#new-chat-btn {
+  position: absolute;
+  top: 10px; /* Position the new chat button below the sidebar toggle button */
+  right: 50px; /* Space from the left */
+  background-color: #007bff;
+  color: white;
+  width: 200px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+  z-index: 10;
+}
+
+#new-chat-btn:hover {
+  background-color: #218838;
 }
