@@ -18,15 +18,12 @@
             placeholder="Password"
             required
           />
-          <button type="submit">Login</button>
+          <button onclick="login(event)" type="submit">Login</button>
         </form>
         <a href="/register">Don't have an account? Register here</a>
         <div class="message" id="message"></div>
       </div>
     </div>
     <script src="js/auth.js"></script>
-    <script>
-      document.getElementById("login-form").addEventListener("submit", login);
-    </script>
   </body>
 </html>
