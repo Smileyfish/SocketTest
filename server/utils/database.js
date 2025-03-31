@@ -1,5 +1,6 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
+import bcrypt from "bcrypt";
 
 export async function setupDatabase() {
   const db = await open({
@@ -27,6 +28,15 @@ export async function setupDatabase() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
   );
 `);
+
+  const hashedPassword = await bcrypt.hash("1234", 10);
+  await db.exec(`
+    INSERT OR IGNORE INTO users (username, password) VALUES
+    ('user1', '${hashedPassword}'),
+    ('user2', '${hashedPassword}'),
+    ('user3', '${hashedPassword}'),
+    ('user4', '${hashedPassword}');
+  `);
 
   return db;
 }
