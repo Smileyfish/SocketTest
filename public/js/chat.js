@@ -14,6 +14,14 @@ if (!token) {
   const messages = document.getElementById("messages");
   const input = document.getElementById("input");
 
+  socket.on("connect", () => {
+    // This event will be emitted by the server with the user info
+    socket.on("authenticated", (user) => {
+      console.log("Authenticated user:", user.username);
+      socket.user = user; // Store it globally on the client side
+    });
+  });
+
   // Load previous messages from the server
   socket.on("previous messages", (msgs) => {
     messages.innerHTML = ""; // Clear existing messages
@@ -28,7 +36,10 @@ if (!token) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     if (input.value) {
-      socket.emit("allchat message", input.value);
+      socket.emit("allchat message", {
+        username: socket.user.username,
+        content: input.value,
+      });
       input.value = "";
     }
   });

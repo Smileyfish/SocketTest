@@ -2,6 +2,12 @@ export function handleSocket(io, db) {
   io.on("connection", async (socket) => {
     console.log("A user connected:", socket.user.username);
 
+    // Emit the username to the client
+    if (socket.user) {
+      socket.emit("authenticated", socket.user);
+      console.log("Authenticated user:", socket.user);
+    }
+
     // Send previous allchat messages to new users
     try {
       const messages = await db.all(
@@ -17,21 +23,17 @@ export function handleSocket(io, db) {
     }
 
     // Handle allchat messages
-    socket.on("allchat message", async (msg) => {
+    socket.on("allchat message", async (data) => {
       try {
+        const { username, content } = data;
+
         await db.run(
           "INSERT INTO messages (content, sender_id, message_type) VALUES (?, ?, 'allchat')",
-          msg,
+          content,
           socket.user.id
         );
 
-        // Fetch username dynamically
-        const { username } = await db.get(
-          "SELECT username FROM users WHERE id = ?",
-          socket.user.id
-        );
-
-        io.emit("allchat message", { username, content: msg });
+        io.emit("allchat message", { username, content });
       } catch (e) {
         console.error("Database error:", e);
       }

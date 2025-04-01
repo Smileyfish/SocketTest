@@ -84,8 +84,10 @@ async function checkSession() {
   const data = await response.json();
   if (data.loggedIn) {
     console.log("User is logged in:", data.user);
+    window.user = data.user; // Store user info globally
   } else {
     console.log("User is not logged in");
+    window.user = null; // Clear user info
   }
 }
 
