@@ -8,6 +8,7 @@ async function register(event) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    credentials: "include", //✅ Include session cookie
   });
 
   const data = await response.json();
@@ -33,6 +34,7 @@ async function login(event) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    credentials: "include", //✅ Include session cookies
   });
 
   const data = await response.json();
@@ -49,3 +51,43 @@ async function login(event) {
   }
 }
 
+async function logout() {
+  try {
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include", // ✅ Include session cookie
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      localStorage.removeItem("token"); // ✅ Remove JWT Token
+      document.cookie =
+        "connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; // ✅ Force delete session cookie
+
+      alert("Logged out successfully!");
+      window.location.href = "/login.html"; // ✅ Redirect to login page
+    } else {
+      alert("Logout failed: " + data.error);
+    }
+  } catch (error) {
+    console.error("Logout error:", error);
+    alert("An error occurred while logging out.");
+  }
+}
+
+async function checkSession() {
+  const response = await fetch("/api/session", {
+    method: "GET",
+    credentials: "include", // ✅ Include session cookie
+  });
+
+  const data = await response.json();
+  if (data.loggedIn) {
+    console.log("User is logged in:", data.user);
+  } else {
+    console.log("User is not logged in");
+  }
+}
+
+// Check session on page load
+checkSession();

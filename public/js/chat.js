@@ -41,11 +41,6 @@ if (!token) {
     window.scrollTo(0, document.body.scrollHeight);
   });
 
-  function logout() {
-    localStorage.removeItem("token");
-    window.location.href = "/login.html";
-  }
-
   // JavaScript to toggle the sidebar
   const sidebar = document.getElementById("sidebar");
   const sidebarToggle = document.getElementById("sidebar-toggle");

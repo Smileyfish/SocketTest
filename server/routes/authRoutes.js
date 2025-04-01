@@ -34,8 +34,20 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
+  // Create session
+  req.session.user = { id: user.id, username: user.username };
+
   const token = generateToken(user);
   res.json({ success: true, token });
+});
+
+// ✅ Logout user (Destroy session)
+router.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ error: "Logout failed" });
+    res.clearCookie("connect.sid"); // Remove session cookie
+    res.json({ success: true });
+  });
 });
 
 export default router;
