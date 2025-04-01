@@ -91,5 +91,9 @@ async function checkSession() {
   }
 }
 
+document.getElementById("logout-btn").addEventListener("click", logout);
+document.getElementById("login-form").addEventListener("submit", login);
+
+
 // Check session on page load
 checkSession();
