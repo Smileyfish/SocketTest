@@ -91,9 +91,21 @@ async function checkSession() {
   }
 }
 
-document.getElementById("logout-btn").addEventListener("click", logout);
-document.getElementById("login-form").addEventListener("submit", login);
+document.addEventListener("DOMContentLoaded", function () {
+  const logoutBtn = document.getElementById("logout-btn");
+  const loginBtn = document.getElementById("login-btn");
+  const registerBtn = document.getElementById("register-btn");
 
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
+  }
+  if (loginBtn) {
+    loginBtn.addEventListener("click", login);
+  }
+  if (registerBtn) {
+    registerBtn.addEventListener("click", register);
+  }
+});
 
 // Check session on page load
 checkSession();
