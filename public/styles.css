@@ -234,23 +234,137 @@ a:hover {
   color: #fff;
 }
 
-/* New chat button */
-#new-chat-btn {
+/* Sidebar select dropdown */
+#recipient-select {
   position: absolute;
-  top: 10px; /* Position the new chat button below the sidebar toggle button */
-  right: 50px; /* Space from the left */
-  background-color: #007bff;
-  color: white;
-  width: 200px;
-  padding: 10px 15px;
-  border: none;
+  width: 80%;
+  right: 1px;
+  padding: 10px;
+  margin-top: 5px;
+  background-color: #2c2f38;
+  color: #f1f1f1;
+  border: 1px solid #444;
   border-radius: 5px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
   cursor: pointer;
-  font-size: 18px;
-  transition: background-color 0.3s ease;
-  z-index: 10;
 }
 
-#new-chat-btn:hover {
-  background-color: #218838;
+/* Hover effect */
+#recipient-select:hover {
+  border-color: #007bff;
+}
+
+/* Focus effect */
+#recipient-select:focus {
+  border-color: #007bff;
+  background-color: #3a3f48;
+}
+
+/* Style the dropdown options */
+#recipient-select option {
+  background: #1e1e1e;
+  color: #f1f1f1;
+  padding: 10px;
+}
+
+/* Chat header inside the sidebar */
+#chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 5px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 10px;
+}
+
+#chat-header h3 {
+  font-size: 1.1rem;
+  color: #f1f1f1;
+  margin: 0;
+}
+
+#close-chat {
+  background-color: #444;
+  border: none;
+  color: #f1f1f1;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#close-chat:hover {
+  background-color: #666;
+}
+
+/* Chat box styles inside sidebar */
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+  max-height: 100%;
+}
+
+#private-messages {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px 0;
+  flex-grow: 1;
+  overflow-y: auto;
+  height: 300px;
+}
+
+#private-messages li {
+  background-color: #2c2f38;
+  padding: 10px 15px;
+  margin: 5px 0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  max-width: 90%;
+  word-wrap: break-word;
+  transition: background-color 0.3s ease;
+}
+
+/* Form and input for private chat */
+#private-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+}
+
+#private-input {
+  background-color: #333;
+  color: #f1f1f1;
+  border: 1px solid #444;
+  border-radius: 30px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  flex: 1;
+}
+
+#private-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Reuse the button style */
+#private-form button {
+  background-color: #007bff;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 30px;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#private-form button:hover {
+  background-color: #0056b3;
 }
