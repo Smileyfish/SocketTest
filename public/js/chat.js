@@ -25,11 +25,6 @@ if (!token) {
     socket.user = user; // Store it globally on the client side
   });
 
-  socket.on("update user", (user) => {
-    console.log("User updated:", user.username);
-    socket.user = user; // Update the user info
-  });
-
   // Fetch online users
   socket.on("update users", (users) => {
     recipientSelect.innerHTML =
@@ -83,6 +78,12 @@ if (!token) {
     item.textContent = `${data.username}: ${data.content}`;
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
+  });
+
+  socket.on("private message", (data) => {
+    console.log(data);
+    console.log("Received private message:", data.content);
+    addPrivateMessage(data.sender, data.content); // Show received message
   });
 
   // JavaScript to toggle the sidebar
@@ -140,12 +141,6 @@ if (!token) {
     const privateForm = document.getElementById("private-form");
     const privateInput = document.getElementById("private-input");
     const privateMessages = document.getElementById("private-messages");
-
-    socket.on("private message", (data) => {
-      console.log(data);
-      console.log("Received private message:", data.content);
-      addPrivateMessage(data.sender, data.content); // Show received message
-    });
 
     privateForm.addEventListener("submit", (e) => {
       e.preventDefault();

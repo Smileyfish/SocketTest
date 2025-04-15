@@ -5,20 +5,19 @@ export function handleSocket(io, db) {
   io.on("connection", async (socket) => {
     console.log("A user connected:", socket.user.username);
 
+    // Send user object to client
+    if (socket.user) {
+      socket.emit("authenticated", socket.user);
+      console.log("Authenticated user:", socket.user);
+    }
+
     // Store user object (username mapped to { socketId, userId })
     users[socket.user.username] = {
       socketId: socket.id,
       userId: socket.user.id,
     };
 
-    io.emit("update user", socket.user);
     io.emit("update users", Object.keys(users));
-
-    // Send user object to client
-    if (socket.user) {
-      socket.emit("authenticated", socket.user);
-      console.log("Authenticated user:", socket.user);
-    }
 
     // Send allchat messages to new users
     try {
@@ -79,7 +78,7 @@ export function handleSocket(io, db) {
           socket.user.id
         );
 
-        io.emit("allchat message", { username, content });
+        io.emit("allchat message", { username: socket.user.username, content });
       } catch (e) {
         console.error("Database error:", e);
       }
