@@ -10,6 +10,16 @@ if (!token) {
     transports: ["websocket"],
   });
 
+  // ✅ Handle expired/invalid token here
+  socket.on("connect_error", (err) => {
+    if (err.message === "Authentication error") {
+      console.error("Socket auth failed:", err.message);
+      alert("Your session has expired. Please log in again.");
+      localStorage.removeItem("token");
+      window.location.replace("/login");
+    }
+  });
+
   const form = document.getElementById("form");
   const messages = document.getElementById("messages");
   const input = document.getElementById("input");
