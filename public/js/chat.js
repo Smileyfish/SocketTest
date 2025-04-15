@@ -14,6 +14,7 @@ if (!token) {
   const messages = document.getElementById("messages");
   const input = document.getElementById("input");
   const recipientSelect = document.getElementById("recipient-select");
+  const chatList = document.getElementById("chat-list");
 
   socket.on("connect", () => {
     console.log("Connected to server with ID:", socket.id);
@@ -23,6 +24,8 @@ if (!token) {
   socket.on("authenticated", (user) => {
     console.log("Authenticated user:", user.username);
     socket.user = user; // Store it globally on the client side
+
+    socket.emit("get chat previews");
   });
 
   // Fetch online users
@@ -57,6 +60,22 @@ if (!token) {
     privateMessages.innerHTML = ""; // Clear
     conversation.forEach((msg) => {
       addPrivateMessage(msg.sender, msg.content);
+    });
+  });
+
+  socket.on("chat previews", (chats) => {
+    chatList.innerHTML = ""; // Clear previous list
+
+    chats.forEach(({ username, lastMessage }) => {
+      const li = document.createElement("li");
+      li.classList.add("chat-preview");
+      li.textContent = `${username}: ${lastMessage.slice(0, 30)}...`;
+
+      li.addEventListener("click", () => {
+        openPrivateChat(username);
+      });
+
+      chatList.appendChild(li);
     });
   });
 
@@ -101,6 +120,7 @@ if (!token) {
 
   function openPrivateChat(username) {
     recipientSelect.style.display = "none";
+    chatList.style.display = "none"; // 👈 Hide chat previews
 
     // Header
     let chatHeader = document.getElementById("chat-header");
@@ -174,6 +194,7 @@ if (!token) {
   function closePrivateChat() {
     selectedUser = null;
     recipientSelect.style.display = "block"; // Show select again
+    chatList.style.display = "block";
     document.getElementById("chat-header")?.remove(); // Remove chat header
     document.getElementById("private-chat")?.remove(); // Remove chat box
   }

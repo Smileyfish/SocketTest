@@ -368,3 +368,46 @@ a:hover {
 #private-form button:hover {
   background-color: #0056b3;
 }
+
+/* Chat preview styles inside the sidebar */
+#chat-list {
+  width: 100%;
+  margin-top: 60px; /* push below recipient-select and toggle */
+  list-style: none;
+  padding: 0;
+}
+
+.chat-preview {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 5px;
+  border-radius: 10px;
+  background-color: #2c2f38;
+  color: #f1f1f1;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chat-preview:hover {
+  background-color: #3a3f48;
+}
+
+/* Optional: add a subtle fade between chats */
+.chat-preview:not(:last-child) {
+  border-bottom: 1px solid #333;
+}
+
+/* You could also add text truncation if messages get long */
+.chat-preview .username {
+  font-weight: bold;
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+.chat-preview .last-message {
+  font-size: 0.9rem;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
