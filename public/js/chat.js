@@ -1,4 +1,5 @@
 const token = localStorage.getItem("token");
+const userColors = {};
 
 if (!token) {
   window.location.replace("/login");
@@ -35,7 +36,11 @@ if (!token) {
     console.log("Authenticated user:", user.username);
     socket.user = user; // Store it globally on the client side
 
-    socket.emit("get chat previews");
+    /*
+    setTimeout(() => {
+      socket.emit("get chat previews");
+    }, 100); // slight delay to avoid timing issues
+    */ //commetned because fixed on server with auth
   });
 
   // Fetch online users
@@ -70,6 +75,7 @@ if (!token) {
     messages.innerHTML = ""; // Clear existing messages
     msgs.forEach((msg) => {
       const item = document.createElement("li");
+      item.style.backgroundColor = getUserColor(msg.username);
       item.textContent = `${msg.username}: ${msg.content}`;
       messages.appendChild(item);
     });
@@ -117,6 +123,7 @@ if (!token) {
   // Display new messages
   socket.on("allchat message", (data) => {
     const item = document.createElement("li");
+    item.style.backgroundColor = getUserColor(data.username); // Set background color
     item.textContent = `${data.username}: ${data.content}`;
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
@@ -225,4 +232,21 @@ if (!token) {
   sidebarToggle.addEventListener("click", () => {
     sidebar.classList.toggle("open"); // Toggle the sidebar visibility
   });
+
+  // Function to generate a unique color based on username
+  function getUserColor(username) {
+    if (!userColors[username]) {
+      let hash = 0;
+      for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      // Create more variation by spreading out hue values
+      const hue = Math.abs(hash * 37) % 360; // Multiply by 37 to shuffle distribution
+      const saturation = 70; // Keep it vibrant
+      const lightness = 50; // Mid-tone
+      const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+      userColors[username] = color;
+    }
+    return userColors[username];
+  }
 }

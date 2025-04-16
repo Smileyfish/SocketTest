@@ -9,6 +9,9 @@ export function handleSocket(io, db) {
     if (socket.user) {
       socket.emit("authenticated", socket.user);
       console.log("Authenticated user:", socket.user);
+
+      // 👇 Send chat previews immediately after authentication
+      sendChatPreviews(socket, db);
     }
 
     // Store user object (username mapped to { socketId, userId })
@@ -80,41 +83,7 @@ export function handleSocket(io, db) {
     });
 
     socket.on("get chat previews", async () => {
-      try {
-        // Get last message for each distinct conversation
-        const messages = await db.all(
-          `
-          SELECT u.username, m.content
-          FROM messages m
-          JOIN users u ON 
-            (u.id = m.sender_id AND m.recipient_id = ?)
-            OR (u.id = m.recipient_id AND m.sender_id = ?)
-          WHERE m.message_type = 'private'
-          ORDER BY m.timestamp DESC
-        `,
-          socket.user.id,
-          socket.user.id
-        );
-
-        const previewsMap = {};
-
-        for (const msg of messages) {
-          if (!previewsMap[msg.username]) {
-            previewsMap[msg.username] = msg.content;
-          }
-        }
-
-        const previews = Object.entries(previewsMap).map(
-          ([username, lastMessage]) => ({
-            username,
-            lastMessage,
-          })
-        );
-        console.log("Chat previews:", previews);
-        socket.emit("chat previews", previews);
-      } catch (e) {
-        console.error("Error getting chat previews:", e);
-      }
+      await sendChatPreviews(socket, db);
     });
 
     // Handle allchat messages
@@ -140,7 +109,6 @@ export function handleSocket(io, db) {
 
       if (!recipientData) {
         console.error("User not found or offline:", recipient);
-        return;
       }
 
       const recipientId = recipientData.userId;
@@ -169,4 +137,40 @@ export function handleSocket(io, db) {
       io.emit("update users", Object.keys(users)); // Update client list
     });
   });
+}
+
+async function sendChatPreviews(socket, db) {
+  try {
+    const messages = await db.all(
+      `
+      SELECT u.username, m.content
+      FROM messages m
+      JOIN users u ON 
+        (u.id = m.sender_id AND m.recipient_id = ?)
+        OR (u.id = m.recipient_id AND m.sender_id = ?)
+      WHERE m.message_type = 'private'
+      ORDER BY m.timestamp DESC
+    `,
+      socket.user.id,
+      socket.user.id
+    );
+
+    const previewsMap = {};
+    for (const msg of messages) {
+      if (!previewsMap[msg.username]) {
+        previewsMap[msg.username] = msg.content;
+      }
+    }
+
+    const previews = Object.entries(previewsMap).map(
+      ([username, lastMessage]) => ({
+        username,
+        lastMessage,
+      })
+    );
+
+    socket.emit("chat previews", previews);
+  } catch (e) {
+    console.error("Error sending chat previews:", e);
+  }
 }

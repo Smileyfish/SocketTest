@@ -44,7 +44,7 @@ app.use(
     }),
     cookie: {
       httpOnly: true, // Protects against XSS attack
-      sameSite: "lax", // <- was 'strict' before?s
+      sameSite: "lax", // was true but changed to lax for chrome compatibility
       secure: false, // Set to `true` if using HTTPS
       maxAge: 24 * 60 * 60 * 1000, // 1 day expiration
     },
