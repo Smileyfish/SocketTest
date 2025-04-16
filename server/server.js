@@ -43,7 +43,8 @@ app.use(
       dir: "server/database",
     }),
     cookie: {
-      httpOnly: true, // Protects against XSS attacks
+      httpOnly: true, // Protects against XSS attack
+      sameSite: "lax", // <- was 'strict' before?s
       secure: false, // Set to `true` if using HTTPS
       maxAge: 24 * 60 * 60 * 1000, // 1 day expiration
     },

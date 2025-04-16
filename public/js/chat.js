@@ -53,6 +53,18 @@ if (!token) {
     });
   });
 
+  // Fetch all users
+  socket.on("all users", (users) => {
+    recipientSelect.innerHTML =
+      '<option value="" disabled selected>Select a user</option>';
+    users.forEach((username) => {
+      const option = document.createElement("option");
+      option.value = username;
+      option.textContent = username;
+      recipientSelect.appendChild(option);
+    });
+  });
+
   // Load previous messages from the server
   socket.on("previous messages", (msgs) => {
     messages.innerHTML = ""; // Clear existing messages
@@ -74,6 +86,7 @@ if (!token) {
   });
 
   socket.on("chat previews", (chats) => {
+    console.log("Chat previews:", chats);
     chatList.innerHTML = ""; // Clear previous list
 
     chats.forEach(({ username, lastMessage }) => {

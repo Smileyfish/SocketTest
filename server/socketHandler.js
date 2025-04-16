@@ -33,6 +33,18 @@ export function handleSocket(io, db) {
       console.error("Error fetching messages from DB:", e);
     }
 
+    // Send all existing users to the new user
+    try {
+      const usersFromDB = await db.all(
+        "SELECT username FROM users WHERE id != ?",
+        socket.user.id
+      );
+      const usernames = usersFromDB.map((user) => user.username);
+      socket.emit("all users", usernames);
+    } catch (e) {
+      console.error("Error fetching all users:", e);
+    }
+
     // Handle request for previous private messages
     socket.on("get private messages", async ({ recipient }) => {
       try {
