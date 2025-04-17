@@ -27,7 +27,8 @@ const SECRET_KEY = "your_secret_key";
 
 app.use(
   cors({
-    origin: "*",
+    origin: "https://sockettest-1-9kua.onrender.com",
+    methods: ["GET", "POST"],
     credentials: true,
   })
 );

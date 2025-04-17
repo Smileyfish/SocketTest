@@ -12,7 +12,7 @@ if (!token) {
 
 // === Socket Setup ===
 function initializeSocket(token) {
-  socket = io("http://localhost:3000", {
+  socket = io("https://sockettest-1-9kua.onrender.com", {
     auth: { token },
     transports: ["websocket"],
   });
