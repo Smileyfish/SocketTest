@@ -8,7 +8,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import { setupDatabase } from "./utils/database.js";
-import { handleSocket } from "./socketHandler.js";
+import { handleSocket } from "./socket/index.js";
 import { socketAuthMiddleware } from "./utils/socketAuthMiddleware.js";
 import staticRoutes from "./routes/staticRoutes.js";
 
