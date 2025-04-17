@@ -108,14 +108,32 @@ function renderAllMessages(msgs) {
 function renderChatPreviews(chats) {
   const chatList = document.getElementById("chat-list");
   chatList.innerHTML = "";
+
   chats.forEach(({ username, lastMessage }) => {
     const li = document.createElement("li");
     li.classList.add("chat-preview");
-    li.textContent = `${username}: ${lastMessage.slice(0, 30)}...`;
+
+    // Use user color with alpha for soft tint
+    const baseColor = getUserColor(username); // e.g., hsl(220, 70%, 50%)
+    const softColor = baseColor.replace("hsl", "hsla").replace(")", ", 0.3)");
+    li.style.backgroundColor = softColor;
+
+    const userDiv = document.createElement("div");
+    userDiv.classList.add("username");
+    userDiv.textContent = username;
+
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("last-message");
+    messageDiv.textContent = lastMessage.slice(0, 60);
+
+    li.appendChild(userDiv);
+    li.appendChild(messageDiv);
+
     li.addEventListener("click", () => {
       selectedUser = username;
       openPrivateChat(username);
     });
+
     chatList.appendChild(li);
   });
 }
