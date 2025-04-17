@@ -46,9 +46,18 @@ function initializeSocket(token) {
 
   socket.on("chat previews", renderChatPreviews);
   socket.on("allchat message", renderPublicMessage);
-  socket.on("private message", ({ sender, content }) => {
-    addPrivateMessage(sender, content);
-    scrollToBottom("private-messages");
+  socket.on("private message", ({ sender, recipient, content }) => {
+    const currentUser = socket.user?.username;
+
+    // Only show message if it's part of the current open chat
+    const isCurrentChat =
+      (selectedUser === sender && currentUser === recipient) ||
+      (selectedUser === recipient && currentUser === sender);
+
+    if (isCurrentChat) {
+      addPrivateMessage(sender, content);
+      scrollToBottom("private-messages");
+    }
   });
 }
 
@@ -103,7 +112,10 @@ function renderChatPreviews(chats) {
     const li = document.createElement("li");
     li.classList.add("chat-preview");
     li.textContent = `${username}: ${lastMessage.slice(0, 30)}...`;
-    li.addEventListener("click", () => openPrivateChat(username));
+    li.addEventListener("click", () => {
+      selectedUser = username;
+      openPrivateChat(username);
+    });
     chatList.appendChild(li);
   });
 }

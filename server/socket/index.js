@@ -76,6 +76,7 @@ export function handleSocket(io, db) {
         if (socketId) {
           io.to(socketId).emit("private message", {
             sender: user.username,
+            recipient,
             content,
           });
         }
