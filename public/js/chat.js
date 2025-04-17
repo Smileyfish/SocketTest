@@ -223,6 +223,7 @@ function renderPrivateChatBox(username) {
 function addPrivateMessage(sender, content) {
   const privateMessages = document.getElementById("private-messages");
   const item = document.createElement("li");
+  item.style.backgroundColor = getUserColor(sender);
   item.textContent = `${sender}: ${content}`;
   privateMessages?.appendChild(item);
   scrollToBottom("private-messages");

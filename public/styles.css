@@ -325,6 +325,7 @@ a:hover {
   padding: 10px 15px;
   margin: 5px 0;
   border-radius: 10px;
+  color: black;
   font-size: 0.95rem;
   max-width: 90%;
   word-wrap: break-word;
