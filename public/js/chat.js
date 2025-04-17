@@ -1,17 +1,26 @@
 const token = localStorage.getItem("token");
 const userColors = {};
+let socket,
+  selectedUser = null;
 
 if (!token) {
   window.location.replace("/login");
 } else {
-  const socket = io("http://localhost:3000", {
-    auth: {
-      token: token,
-    },
+  initializeSocket(token);
+  bindUI();
+}
+
+// === Socket Setup ===
+function initializeSocket(token) {
+  socket = io("http://localhost:3000", {
+    auth: { token },
     transports: ["websocket"],
   });
 
-  // ✅ Handle expired/invalid token here
+  socket.on("connect", () => {
+    console.log("Connected to server with ID:", socket.id);
+  });
+
   socket.on("connect_error", (err) => {
     if (err.message === "Authentication error") {
       console.error("Socket auth failed:", err.message);
@@ -21,232 +30,233 @@ if (!token) {
     }
   });
 
-  const form = document.getElementById("form");
-  const messages = document.getElementById("messages");
-  const input = document.getElementById("input");
-  const recipientSelect = document.getElementById("recipient-select");
-  const chatList = document.getElementById("chat-list");
-
-  socket.on("connect", () => {
-    console.log("Connected to server with ID:", socket.id);
-  });
-
-  // This event will be emitted by the server with the user info
   socket.on("authenticated", (user) => {
     console.log("Authenticated user:", user.username);
-    socket.user = user; // Store it globally on the client side
-
-    /*
-    setTimeout(() => {
-      socket.emit("get chat previews");
-    }, 100); // slight delay to avoid timing issues
-    */ //commetned because fixed on server with auth
+    socket.user = user;
   });
 
-  // Fetch online users
-  socket.on("update users", (users) => {
-    recipientSelect.innerHTML =
-      '<option value="" disabled selected>New Chat</option>'; // Clear existing options
-    console.log("Online users:", users);
-    users.forEach((username) => {
-      if (username !== socket.user.username) {
-        const option = document.createElement("option");
-        option.value = username;
-        option.textContent = username;
-        recipientSelect.appendChild(option);
-      }
+  socket.on("update users", updateRecipientSelect);
+  socket.on("all users", updateRecipientSelect);
+  socket.on("previous messages", renderAllMessages);
+  socket.on("previous private messages", ({ conversation }) => {
+    clearPrivateMessages();
+    conversation.forEach((msg) => addPrivateMessage(msg.sender, msg.content));
+    scrollToBottom("private-messages");
+  });
+
+  socket.on("chat previews", renderChatPreviews);
+  socket.on("allchat message", renderPublicMessage);
+  socket.on("private message", ({ sender, content }) => {
+    addPrivateMessage(sender, content);
+    scrollToBottom("private-messages");
+  });
+}
+
+// === UI Bindings ===
+function bindUI() {
+  document
+    .getElementById("form")
+    ?.addEventListener("submit", handlePublicMessage);
+  document
+    .getElementById("recipient-select")
+    ?.addEventListener("change", (e) => {
+      selectedUser = e.target.value;
+      if (selectedUser) openPrivateChat(selectedUser);
     });
-  });
 
-  // Fetch all users
-  socket.on("all users", (users) => {
-    recipientSelect.innerHTML =
-      '<option value="" disabled selected>Select a user</option>';
-    users.forEach((username) => {
+  document.getElementById("sidebar-toggle")?.addEventListener("click", () => {
+    document.getElementById("sidebar")?.classList.toggle("open");
+  });
+}
+
+// === UI Update Functions ===
+function updateRecipientSelect(users) {
+  const recipientSelect = document.getElementById("recipient-select");
+  if (!recipientSelect || !socket.user) return;
+
+  recipientSelect.innerHTML =
+    '<option value="" disabled selected>Select a user</option>';
+  users.forEach((username) => {
+    if (username !== socket.user.username) {
       const option = document.createElement("option");
       option.value = username;
       option.textContent = username;
       recipientSelect.appendChild(option);
-    });
+    }
   });
+}
 
-  // Load previous messages from the server
-  socket.on("previous messages", (msgs) => {
-    messages.innerHTML = ""; // Clear existing messages
-    msgs.forEach((msg) => {
-      const item = document.createElement("li");
-      item.style.backgroundColor = getUserColor(msg.username);
-      item.textContent = `${msg.username}: ${msg.content}`;
-      messages.appendChild(item);
-    });
+function renderAllMessages(msgs) {
+  const messages = document.getElementById("messages");
+  messages.innerHTML = "";
+  msgs.forEach(({ username, content }) => {
+    const li = createMessageElement(username, content);
+    messages.appendChild(li);
   });
+  scrollToBottom("messages");
+}
 
-  // Private history
-  socket.on("previous private messages", ({ conversation }) => {
-    console.log("Previous private messages:", conversation);
-    const privateMessages = document.getElementById("private-messages");
-    privateMessages.innerHTML = ""; // Clear
-    conversation.forEach((msg) => {
-      addPrivateMessage(msg.sender, msg.content);
-    });
+function renderChatPreviews(chats) {
+  const chatList = document.getElementById("chat-list");
+  chatList.innerHTML = "";
+  chats.forEach(({ username, lastMessage }) => {
+    const li = document.createElement("li");
+    li.classList.add("chat-preview");
+    li.textContent = `${username}: ${lastMessage.slice(0, 30)}...`;
+    li.addEventListener("click", () => openPrivateChat(username));
+    chatList.appendChild(li);
   });
+}
 
-  socket.on("chat previews", (chats) => {
-    console.log("Chat previews:", chats);
-    chatList.innerHTML = ""; // Clear previous list
+function renderPublicMessage({ username, content }) {
+  const messages = document.getElementById("messages");
+  const li = createMessageElement(username, content);
+  messages.appendChild(li);
+  scrollToBottom("messages");
+}
 
-    chats.forEach(({ username, lastMessage }) => {
-      const li = document.createElement("li");
-      li.classList.add("chat-preview");
-      li.textContent = `${username}: ${lastMessage.slice(0, 30)}...`;
+function createMessageElement(username, content) {
+  const item = document.createElement("li");
+  item.style.backgroundColor = getUserColor(username);
+  item.textContent = `${username}: ${content}`;
+  return item;
+}
 
-      li.addEventListener("click", () => {
-        openPrivateChat(username);
-      });
-
-      chatList.appendChild(li);
+// === Message Handlers ===
+function handlePublicMessage(e) {
+  e.preventDefault();
+  const input = document.getElementById("input");
+  if (input?.value.trim()) {
+    socket.emit("allchat message", {
+      username: socket.user.username,
+      content: input.value.trim(),
     });
-  });
+    input.value = "";
+  }
+}
 
-  // Send new message
-  form.addEventListener("submit", (e) => {
+function openPrivateChat(username) {
+  hideElement("recipient-select");
+  hideElement("chat-list");
+
+  renderChatHeader(username);
+  renderPrivateChatBox(username);
+  socket.emit("get private messages", { recipient: username });
+  setPrivatePlaceholder(username);
+}
+
+function closePrivateChat() {
+  selectedUser = null;
+  showElement("recipient-select");
+  showElement("chat-list");
+  removeElement("chat-header");
+  removeElement("private-chat");
+}
+
+function renderChatHeader(username) {
+  const sidebar = document.getElementById("sidebar");
+  let chatHeader = document.getElementById("chat-header");
+
+  if (!chatHeader) {
+    chatHeader = document.createElement("div");
+    chatHeader.id = "chat-header";
+    chatHeader.classList.add("chat-header");
+    sidebar.insertBefore(chatHeader, sidebar.firstChild);
+  }
+
+  chatHeader.innerHTML = `
+    <h3>Chat with ${username}</h3>
+    <button id="close-chat">🔙</button>
+  `;
+
+  document
+    .getElementById("close-chat")
+    ?.addEventListener("click", closePrivateChat);
+}
+
+function renderPrivateChatBox(username) {
+  const sidebar = document.getElementById("sidebar");
+  let chatBox = document.getElementById("private-chat");
+
+  if (!chatBox) {
+    chatBox = document.createElement("div");
+    chatBox.id = "private-chat";
+    chatBox.classList.add("chat-box");
+    sidebar.appendChild(chatBox);
+  }
+
+  chatBox.innerHTML = `
+    <ul id="private-messages"></ul>
+    <form id="private-form">
+      <input id="private-input" placeholder="Type a message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  `;
+
+  document.getElementById("private-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
-    if (input.value) {
-      socket.emit("allchat message", {
-        username: socket.user.username,
-        content: input.value,
+    const input = document.getElementById("private-input");
+    const content = input?.value.trim();
+    if (content) {
+      socket.emit("private message", {
+        recipient: username,
+        content,
       });
+      addPrivateMessage(socket.user.username, content);
       input.value = "";
     }
   });
+}
 
-  // Display new messages
-  socket.on("allchat message", (data) => {
-    const item = document.createElement("li");
-    item.style.backgroundColor = getUserColor(data.username); // Set background color
-    item.textContent = `${data.username}: ${data.content}`;
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
-  });
+function addPrivateMessage(sender, content) {
+  const privateMessages = document.getElementById("private-messages");
+  const item = document.createElement("li");
+  item.textContent = `${sender}: ${content}`;
+  privateMessages?.appendChild(item);
+  scrollToBottom("private-messages");
+}
 
-  socket.on("private message", (data) => {
-    console.log(data);
-    console.log("Received private message:", data.content);
-    addPrivateMessage(data.sender, data.content); // Show received message
-  });
+function clearPrivateMessages() {
+  const privateMessages = document.getElementById("private-messages");
+  if (privateMessages) privateMessages.innerHTML = "";
+}
 
-  // JavaScript to toggle the sidebar
-  const sidebar = document.getElementById("sidebar");
-  const sidebarToggle = document.getElementById("sidebar-toggle");
+function setPrivatePlaceholder(username) {
+  const privateMessages = document.getElementById("private-messages");
+  privateMessages.innerHTML = `<li>Start a conversation with ${username}...</li>`;
+}
 
-  let selectedUser = null;
-  // Listen for selection change
-  recipientSelect.addEventListener("change", (event) => {
-    selectedUser = event.target.value;
-    if (selectedUser) {
-      openPrivateChat(selectedUser);
-    }
-  });
+// === Utilities ===
+function hideElement(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
 
-  function openPrivateChat(username) {
-    recipientSelect.style.display = "none";
-    chatList.style.display = "none"; // 👈 Hide chat previews
+function showElement(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "block";
+}
 
-    // Header
-    let chatHeader = document.getElementById("chat-header");
-    if (!chatHeader) {
-      chatHeader = document.createElement("div");
-      chatHeader.id = "chat-header";
-      chatHeader.classList.add("chat-header");
-      sidebar.insertBefore(chatHeader, sidebar.firstChild);
-    }
+function removeElement(id) {
+  const el = document.getElementById(id);
+  el?.remove();
+}
 
-    chatHeader.innerHTML = `
-      <h3>Chat with ${username}</h3>
-      <button id="close-chat">🔙</button>
-    `;
-
-    document.getElementById("close-chat").addEventListener("click", () => {
-      closePrivateChat();
-    });
-
-    // Chat Box
-    let chatBox = document.getElementById("private-chat");
-    if (!chatBox) {
-      chatBox = document.createElement("div");
-      chatBox.id = "private-chat";
-      chatBox.classList.add("chat-box");
-      sidebar.appendChild(chatBox);
-    }
-
-    chatBox.innerHTML = `
-      <ul id="private-messages"></ul>
-      <form id="private-form">
-        <input id="private-input" placeholder="Type a message..." autocomplete="off" />
-        <button type="submit">Send</button>
-      </form>
-    `;
-
-    // Event listener for sending private messages
-    const privateForm = document.getElementById("private-form");
-    const privateInput = document.getElementById("private-input");
-    const privateMessages = document.getElementById("private-messages");
-
-    privateForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const content = privateInput.value.trim();
-      if (content) {
-        socket.emit("private message", {
-          recipient: username,
-          content,
-        });
-        addPrivateMessage(socket.user.username, content); // Show sent message
-        privateInput.value = "";
-      }
-    });
-
-    // Optional: Load previous private messages from the server here
-    socket.emit("get private messages", {
-      recipient: username,
-    });
-
-    privateMessages.innerHTML = `<li>Start a conversation with ${username}...</li>`;
+function scrollToBottom(elementId) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.scrollTop = element.scrollHeight;
   }
+}
 
-  function addPrivateMessage(sender, content) {
-    const privateMessages = document.getElementById("private-messages");
-    const item = document.createElement("li");
-    item.textContent = `${sender}: ${content}`;
-    privateMessages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
-  }
-
-  function closePrivateChat() {
-    selectedUser = null;
-    recipientSelect.style.display = "block"; // Show select again
-    chatList.style.display = "block";
-    document.getElementById("chat-header")?.remove(); // Remove chat header
-    document.getElementById("private-chat")?.remove(); // Remove chat box
-  }
-
-  sidebarToggle.addEventListener("click", () => {
-    sidebar.classList.toggle("open"); // Toggle the sidebar visibility
-  });
-
-  // Function to generate a unique color based on username
-  function getUserColor(username) {
-    if (!userColors[username]) {
-      let hash = 0;
-      for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      // Create more variation by spreading out hue values
-      const hue = Math.abs(hash * 37) % 360; // Multiply by 37 to shuffle distribution
-      const saturation = 70; // Keep it vibrant
-      const lightness = 50; // Mid-tone
-      const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-      userColors[username] = color;
+function getUserColor(username) {
+  if (!userColors[username]) {
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+      hash = username.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return userColors[username];
+    const hue = Math.abs(hash * 37) % 360;
+    userColors[username] = `hsl(${hue}, 70%, 50%)`;
   }
+  return userColors[username];
 }
