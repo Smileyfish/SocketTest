@@ -11,6 +11,7 @@ import { setupDatabase } from "./utils/database.js";
 import { handleSocket } from "./socket/index.js";
 import { socketAuthMiddleware } from "./utils/socketAuthMiddleware.js";
 import staticRoutes from "./routes/staticRoutes.js";
+import { initializeUserCache } from "./socket/userCache.js";
 
 const app = express();
 const server = createServer(app);
@@ -67,6 +68,7 @@ app.get("/api/session", (req, res) => {
 async function startServer() {
   try {
     const db = await setupDatabase();
+    await initializeUserCache(db); // Initialize user cache
 
     // Use the imported socketAuthMiddleware for authentication
     io.use(socketAuthMiddleware);

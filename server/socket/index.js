@@ -1,5 +1,10 @@
 import { users, addUser, removeUser, getRecipientData } from "./socketUsers.js";
-import { sendChatPreviews, fetchAllUsers, fetchAllChatMessages, fetchPrivateMessages } from "./socketUtils.js";
+import {
+  sendChatPreviews,
+  fetchAllUsers,
+  fetchAllChatMessages,
+  fetchPrivateMessages,
+} from "./socketUtils.js";
 
 export function handleSocket(io, db) {
   io.on("connection", async (socket) => {
@@ -55,17 +60,25 @@ export function handleSocket(io, db) {
 
     socket.on("private message", async ({ recipient, content }) => {
       try {
-        const { userId: recipientId, socketId } = getRecipientData(recipient);
+        const { userId: recipientId, socketId } = await getRecipientData(
+          recipient
+        );
+
+        // Save to DB
         await db.run(
           "INSERT INTO messages (content, sender_id, recipient_id, message_type) VALUES (?, ?, ?, 'private')",
           content,
           user.id,
           recipientId
         );
-        io.to(socketId).emit("private message", {
-          sender: user.username,
-          content,
-        });
+
+        // Only emit to recipient if they're online
+        if (socketId) {
+          io.to(socketId).emit("private message", {
+            sender: user.username,
+            content,
+          });
+        }
       } catch (e) {
         console.error("❌ Error sending private message:", e);
       }
