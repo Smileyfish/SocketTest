@@ -1,0 +1,5 @@
+# Only for GitHub to push fodler for database
+# Ignore every file in this folder
+*
+# Except this one
+!.gitignore
